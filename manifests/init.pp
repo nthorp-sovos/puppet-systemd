@@ -55,8 +55,9 @@ class systemd (
   if $manage_networkd and $facts['systemd_internal_services'] and $facts['systemd_internal_services']['systemd-networkd.service'] {
     contain ::systemd::networkd
   }
-
-  if $manage_timesyncd and $facts['systemd_internal_services'] and $facts['systemd_internal_services']['systemd-timesyncd.service'] {
+  #original if includes facts not present on our version
+  #if $manage_timesyncd {#and $facts['systemd_internal_services'] and $facts['systemd_internal_services']['systemd-timesyncd.service'] {
+  if $manage_timesyncd {
     contain ::systemd::timesyncd
   }
 }

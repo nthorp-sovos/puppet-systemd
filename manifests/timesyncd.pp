@@ -27,9 +27,31 @@ class systemd::timesyncd (
     default   => $ensure,
   }
 
-  service{ 'systemd-timesyncd':
-    ensure => $ensure,
-    enable => $_enable_timesyncd,
+  case $facts['os']['family'] {
+    'Debian', 'Ubuntu': {
+      service{ 'systemd-timesyncd':
+        name   => 'systemd-timesyncd',
+        ensure => $ensure,
+        enable => $_enable_timesyncd,
+      }
+    }
+    'RedHat', 'CentOS': {
+      package { 'ntp': }
+      exec { "timedatectl set-ntp ${_enable_timesyncd}":
+        command => "/usr/bin/timedatectl set-ntp '${_enable_timesyncd}'",
+        unless  => "/usr/bin/timedatectl status | grep -qe 'NTP enabled: yes'";
+        require => Package['ntp'],
+      }
+      service{ 'systemd-timesyncd':
+        ensure => $ensure,
+        name   => 'systemd-timedated',
+        enable => $_enable_timesyncd,
+        require => Exec["timedatectl set-ntp ${_enable_timesyncd}"],
+      }
+    }
+    default: {
+      fail("${facts['operatingsystem']} not supported.")
+    }
   }
 
   if $ntp_server {
